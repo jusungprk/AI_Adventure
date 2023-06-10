@@ -13,27 +13,46 @@
 </body>
 <script src="script.js">
     let iterationCount = 0;
-const submitButton = document.querySelector("#generate-btn")
-const inputElement = document.querySelector("#adventure-input")
 
-submitButton.addEventListener("click", async () => {
-    let initialPrompt = inputElement.value;
-    try {
-        const response = await fetch(`http://localhost:3000/startAdventure`, {
+    const submitButton = document.querySelector("#generate-btn")
+    const inputElement = document.querySelector("#adventure-input")
+    const imageElement = document.querySelector("#adventure-image")
+    const choicesElement = document.querySelector("#choices")
+
+    submitButton.addEventListener("click", async () => {
+        let initialPrompt = inputElement.value;
+        await processAdventure(initialPrompt);
+    });
+
+    async function processAdventure(prompt) {
+        const response = await fetch("http://localhost:3000/startAdventure", {
             method: "POST",
             headers: {
-                'Content-Type': 'application/json'
+            "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                "prompt": initialPrompt,
-                "iterationCount": iterationCount
+                prompt: prompt
             })
         });
-        const adventureData = await response.json();
-        // Update the UI with the data received
-    } catch (error) {
-        console.error(error)
+
+        const data = await response.json();
+
+        imageElement.src = data.imageUrls[0]; // Adjust this if multiple images are returned
+        choicesElement.innerHTML = "";
+
+        for (let choice of data.choices) {
+            let choiceElement = document.createElement("div");
+            choiceElement.classList.add("choice");
+            choiceElement.innerText = choice;
+            choiceElement.addEventListener("click", async () => {
+                if (iterationCount < 10) {
+                    iterationCount++;
+                    await processAdventure(choice);
+                }
+            });
+            choicesElement.appendChild(choiceElement);
+        }
     }
-});
+
 </script>
 </html>
