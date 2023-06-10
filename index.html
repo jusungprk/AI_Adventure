@@ -10,50 +10,57 @@
     <input type="text" id="adventure-input" placeholder="Enter your starting scenario">
     <button id="generate-btn">Generate</button>
     <div id="choices"></div>
-</body>
 <script src="/AI_Adventure/app.js" defer>
+    document.addEventListener("DOMContentLoaded", () => {
     let iterationCount = 0;
+    const submitButton = document.querySelector("#generate-btn")
+    const inputElement = document.querySelector("#adventure-input")
+    const imageElement = document.querySelector("#adventure-image")
+    const choicesElement = document.querySelector("#choices")
 
-const submitButton = document.querySelector("#generate-btn")
-const inputElement = document.querySelector("#adventure-input")
-const imageElement = document.querySelector("#adventure-image")
-const choicesElement = document.querySelector("#choices")
+    const fetchAdventureData = async (prompt) => {
+        const response = await fetch("/AI_Adventure/startAdventure", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ prompt: prompt }),
+        });
 
-submitButton.addEventListener("click", async () => {
-    let initialPrompt = inputElement.value;
-    await processAdventure(initialPrompt);
+        const data = await response.json();
+        return data;
+    }
+
+    submitButton.addEventListener("click", async () => {
+        const prompt = inputElement.value;
+        const data = await fetchAdventureData(prompt);
+        
+        imageElement.src = data.imageUrl;
+        choicesElement.innerHTML = '';
+        data.choices.forEach((choice, index) => {
+            const choiceButton = document.createElement("button");
+            choiceButton.innerText = choice;
+            choiceButton.id = `choice${index + 1}`;
+            choiceButton.addEventListener("click", async () => {
+                const newPrompt = choice;
+
+                iterationCount++;
+                if (iterationCount >= 10) {
+                    const choiceButtons = document.querySelectorAll("#choices button");
+                    choiceButtons.forEach(button => button.disabled = true);
+                    return;
+                }
+
+                const newData = await fetchAdventureData(newPrompt);
+                imageElement.src = newData.imageUrl;
+            });
+            choicesElement.appendChild(choiceButton);
+        });
+    });
 });
 
-async function processAdventure(prompt) {
-    const response = await fetch("jusungpark.me/AI_Adventure/startAdventure", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            prompt: prompt
-        })
-    });
-
-    const data = await response.json();
-
-    imageElement.src = data.imageUrls[0]; // Adjust this if multiple images are returned
-    choicesElement.innerHTML = "";
-
-    for (let choice of data.choices) {
-        let choiceElement = document.createElement("div");
-        choiceElement.classList.add("choice");
-        choiceElement.innerText = choice;
-        choiceElement.addEventListener("click", async () => {
-            if (iterationCount < 10) {
-                iterationCount++;
-                await processAdventure(choice);
-            }
-        });
-        choicesElement.appendChild(choiceElement);
-    }
-}
 
 
 </script>
+</body>
 </html>
