@@ -14,45 +14,46 @@
 <script src="script.js">
     let iterationCount = 0;
 
-    const submitButton = document.querySelector("#generate-btn")
-    const inputElement = document.querySelector("#adventure-input")
-    const imageElement = document.querySelector("#adventure-image")
-    const choicesElement = document.querySelector("#choices")
+const submitButton = document.querySelector("#generate-btn")
+const inputElement = document.querySelector("#adventure-input")
+const imageElement = document.querySelector("#adventure-image")
+const choicesElement = document.querySelector("#choices")
 
-    submitButton.addEventListener("click", async () => {
-        let initialPrompt = inputElement.value;
-        await processAdventure(initialPrompt);
+submitButton.addEventListener("click", async () => {
+    let initialPrompt = inputElement.value;
+    await processAdventure(initialPrompt);
+});
+
+async function processAdventure(prompt) {
+    const response = await fetch("your_server_url/startAdventure", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            prompt: prompt
+        })
     });
 
-    async function processAdventure(prompt) {
-        const response = await fetch("http://localhost:3000/startAdventure", {
-            method: "POST",
-            headers: {
-            "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                prompt: prompt
-            })
+    const data = await response.json();
+
+    imageElement.src = data.imageUrls[0]; // Adjust this if multiple images are returned
+    choicesElement.innerHTML = "";
+
+    for (let choice of data.choices) {
+        let choiceElement = document.createElement("div");
+        choiceElement.classList.add("choice");
+        choiceElement.innerText = choice;
+        choiceElement.addEventListener("click", async () => {
+            if (iterationCount < 10) {
+                iterationCount++;
+                await processAdventure(choice);
+            }
         });
-
-        const data = await response.json();
-
-        imageElement.src = data.imageUrls[0]; // Adjust this if multiple images are returned
-        choicesElement.innerHTML = "";
-
-        for (let choice of data.choices) {
-            let choiceElement = document.createElement("div");
-            choiceElement.classList.add("choice");
-            choiceElement.innerText = choice;
-            choiceElement.addEventListener("click", async () => {
-                if (iterationCount < 10) {
-                    iterationCount++;
-                    await processAdventure(choice);
-                }
-            });
-            choicesElement.appendChild(choiceElement);
-        }
+        choicesElement.appendChild(choiceElement);
     }
+}
+
 
 </script>
 </html>
